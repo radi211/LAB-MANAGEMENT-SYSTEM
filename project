@@ -1,0 +1,343 @@
+import java.util.*;
+
+abstract class PC {
+    private int id;
+    private boolean isAssigned;
+
+    public PC(int id) {
+        this.id = id;
+        this.isAssigned = false;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public boolean isAssigned() {
+        return isAssigned;
+    }
+
+    public void setAssigned(boolean assigned) {
+        isAssigned = assigned;
+    }
+
+    public abstract void showType();
+
+    public abstract String getTypeName();
+}
+
+class GamingPC extends PC {
+    public GamingPC(int id) {
+        super(id);
+    }
+
+    public void showType() {
+        System.out.print(getTypeName());
+    }
+
+    public String getTypeName() {
+        return "Gaming PC";
+    }
+}
+
+class OfficePC extends PC {
+    public OfficePC(int id) {
+        super(id);
+    }
+
+    public void showType() {
+        System.out.print(getTypeName());
+    }
+
+    public String getTypeName() {
+        return "Office PC";
+    }
+}
+
+class LabManager {
+    private ArrayList<PC> pcs = new ArrayList<>();
+
+    private boolean hasPCId(int id) {
+        for (PC pc : pcs) {
+            if (pc.getId() == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean addPC(PC pc, boolean showMessage) {
+        if (hasPCId(pc.getId())) {
+            System.out.println("PC ID already exists!");
+            return false;
+        }
+
+        pcs.add(pc);
+        if (showMessage) {
+            System.out.println("PC Added Successfully!");
+        }
+        return true;
+    }
+
+    public void showAllPC() {
+        System.out.println("---------ALL PCs---------");
+        for (PC pc : pcs) {
+            System.out.print("ID: " + pc.getId() + " | ");
+            pc.showType();
+
+            if (pc.isAssigned()) {
+                System.out.println(" | Status: Occupied");
+            } else {
+                System.out.println(" | Status: Available");
+            }
+
+            System.out.println("----------------------");
+        }
+    }
+
+    public void showAvailablePCs() {
+        boolean found = false;
+        for (PC pc : pcs) {
+            if (!pc.isAssigned()) {
+                System.out.print("ID: " + pc.getId() + " | ");
+                pc.showType();
+                System.out.println(" | Status: Available");
+                System.out.println("----------------------");
+                found = true;
+            }
+        }
+
+        if (!found) {
+            System.out.println("No available PC right now!");
+        }
+    }
+
+    public boolean assignPC(int id) {
+        for (PC pc : pcs) {
+            if (pc.getId() == id) {
+                if (!pc.isAssigned()) {
+                    pc.setAssigned(true);
+                    System.out.println("PC Assigned!");
+                    return true;
+                } else {
+                    System.out.println("Already Assigned!");
+                }
+                return false;
+            }
+        }
+        System.out.println("PC not found!");
+        return false;
+    }
+
+    public void releasePC(int id) {
+        for (PC pc : pcs) {
+            if (pc.getId() == id) {
+                if (pc.isAssigned()) {
+                    pc.setAssigned(false);
+                    System.out.println("PC Released!");
+                } else {
+                    System.out.println("Already Free!");
+                }
+                return;
+            }
+        }
+        System.out.println("PC not found!");
+    }
+
+    public PC getPCById(int id) {
+        for (PC pc : pcs) {
+            if (pc.getId() == id) {
+                return pc;
+            }
+        }
+        return null;
+    }
+}
+
+public class Main {
+    static final String ADMIN_USER = "admin";
+    static final String ADMIN_PASS = "1234";
+    static final String STUDENT_USER = "rafi";
+    static final String STUDENT_PASS = "1234";
+
+    private static int readIntSafe(Scanner sc, String prompt) {
+        while (true) {
+            if (!prompt.isEmpty()) {
+                System.out.print(prompt);
+            }
+
+            if (sc.hasNextInt()) {
+                return sc.nextInt();
+            }
+
+            System.out.println("Invalid input! Enter a number.");
+            sc.next();
+        }
+    }
+
+    private static boolean handleLogin(Scanner sc, String expectedUser, String expectedPass, String successMessage) {
+        sc.nextLine();
+        System.out.print("Username: ");
+        String user = sc.nextLine();
+        System.out.print("Password: ");
+        String pass = sc.nextLine();
+
+        if (user.equals(expectedUser) && pass.equals(expectedPass)) {
+            System.out.println(successMessage);
+            return true;
+        }
+
+        System.out.println("Wrong credentials!");
+        return false;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        LabManager lab = new LabManager();
+
+        lab.addPC(new GamingPC(1), false);
+        lab.addPC(new OfficePC(2), false);
+
+        boolean isLoggedIn = false;
+        boolean isStudentLoggedIn = false;
+        int studentAssignedCount = 0;
+        ArrayList<Integer> studentAssignedPcIds = new ArrayList<>();
+
+        while (true) {
+            System.out.println("\n===== PC LAB MANAGEMENT SYSTEM =====");
+
+            if (isLoggedIn) {
+                System.out.println("---------ADMIN PANEL---------");
+                System.out.println("1. Show PCs");
+                System.out.println("2. Assign PC (Admin)");
+                System.out.println("3. Add New PC (Admin)");
+                System.out.println("4. Release PC (Admin)");
+                System.out.println("5. Log Out");
+            } else if (isStudentLoggedIn) {
+                System.out.println("---------STUDENT PANEL---------");
+                System.out.println("1. Assign PC");
+                System.out.println("2. My Assigned Count");
+                System.out.println("3. Log Out");
+            } else {
+                System.out.println("---------DASHBOARD---------");
+                System.out.println("1. Show PCs");
+                System.out.println("2. Student Panel");
+                System.out.println("3. Admin Panel");
+                System.out.println("4. Exit");
+            }
+
+            int choice = readIntSafe(sc, "Select option: ");
+
+            if (!isLoggedIn) {
+                if (isStudentLoggedIn) {
+                    if (choice == 1) {
+                        System.out.println("Available PCs:");
+                        lab.showAvailablePCs();
+                        int id = readIntSafe(sc, "Enter PC ID: ");
+                        if (lab.assignPC(id)) {
+                            studentAssignedCount++;
+                            studentAssignedPcIds.add(id);
+                        }
+                    } else if (choice == 2) {
+                        System.out.println("You have assigned " + studentAssignedCount + " PC(s).");
+                        if (studentAssignedPcIds.isEmpty()) {
+                            System.out.println("No PC assignment history yet.");
+                        } else {
+                            System.out.println("Assigned PC Details:");
+                            for (int assignedId : studentAssignedPcIds) {
+                                PC assignedPC = lab.getPCById(assignedId);
+                                if (assignedPC != null) {
+                                    System.out.println("ID: " + assignedPC.getId() + " | Type: " + assignedPC.getTypeName());
+                                }
+                            }
+                        }
+                    } else if (choice == 3) {
+                        isStudentLoggedIn = false;
+                        System.out.println("Logged out. Back to dashboard.");
+                    } else {
+                        System.out.println("Invalid option!");
+                    }
+                    continue;
+                }
+
+                if (choice == 2) {
+                    System.out.println("---------Student Panel Login---------");
+                    if (handleLogin(sc, STUDENT_USER, STUDENT_PASS, "Student Login Successful!")) {
+                        isStudentLoggedIn = true;
+                    }
+                    continue;
+                }
+
+                if (choice == 3) {
+                    System.out.println("---------Admin Panel Login---------");
+                    if (handleLogin(sc, ADMIN_USER, ADMIN_PASS, "Login Successful!")) {
+                        isLoggedIn = true;
+                        isStudentLoggedIn = false;
+                    }
+                    continue;
+                }
+
+                if (choice == 4) {
+                    System.out.println("Exiting...");
+                    return;
+                }
+            }
+
+            switch (choice) {
+
+                case 1:
+                    lab.showAllPC();
+                    break;
+
+                case 2:
+                    if (!isLoggedIn) {
+                        System.out.println("Login first!");
+                        break;
+                    }
+                    lab.assignPC(readIntSafe(sc, "Enter PC ID: "));
+                    break;
+
+                case 3:
+                    if (!isLoggedIn) {
+                        System.out.println("Invalid option!");
+                        break;
+                    }
+                    int newId = readIntSafe(sc, "Enter new PC ID: ");
+
+                    System.out.println("1. Gaming PC");
+                    System.out.println("2. Office PC");
+                    int type = readIntSafe(sc, "Choose type: ");
+
+                    if (type == 1) {
+                        lab.addPC(new GamingPC(newId), true);
+                    } else if (type == 2) {
+                        lab.addPC(new OfficePC(newId), true);
+                    } else {
+                        System.out.println("Invalid type!");
+                    }
+                    break;
+
+                case 4:
+                    if (!isLoggedIn) {
+                        System.out.println("Login first!");
+                        break;
+                    }
+                    lab.releasePC(readIntSafe(sc, "Enter PC ID: "));
+                    break;
+
+                case 5:
+                    if (!isLoggedIn) {
+                        System.out.println("Invalid option!");
+                        break;
+                    }
+                    isLoggedIn = false;
+                    isStudentLoggedIn = false;
+                    System.out.println("Admin logged out. Back to dashboard.");
+                    break;
+
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+}
